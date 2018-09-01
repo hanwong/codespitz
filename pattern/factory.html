@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta http-equiv="X-UA-Compatible" content="ie=edge">
+  <title>Abstract Facotry Pattern</title>
+</head>
+<body>
+<script>
+// Coffee, Water, Milk, Steam, Ice
+const prop = (t, p) => Object.assign(t, p);
+
+const Coffee = class {
+  constructor (q) {
+    this.coffee = q
+  }
+}
+
+const Water = class {
+  constructor (q) {
+    this.water = q
+  }
+}
+
+const Milk = class {
+  constructor (q) {
+    this.milk = q
+  }
+}
+
+const Steam = class {
+  constructor (q) {
+    this.steam = q
+  }
+}
+
+const Ice = class {
+  constructor (q) {
+    this.ice = q
+  }
+}
+
+const Barista = class {
+  pourCoffee(q) {
+    return new Coffee(q)
+  }
+  pourWater(q) {
+    return new Water(q)
+  }
+  pourMilk(q) {
+    return new Milk(q)
+  }
+  pourSteam(q) {
+    return new Steam(q)
+  }
+  pourIce(q) {
+    return new Ice(q)
+  }
+}
+
+
+const Latte = class extends Barista {
+  constructor() {
+    super()
+  }
+  makeCoffee() {
+    prop(this, this.pourCoffee(100))
+    prop(this, this.pourSteam(1))
+    prop(this, this.pourMilk(100))
+  }
+}
+
+const latte = new Latte
+
+</script>
+</body>
+</html>
