@@ -1,0 +1,31 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta http-equiv="X-UA-Compatible" content="ie=edge">
+  <title>Document</title>
+</head>
+<body>
+<script>
+  const generator = function*(i, j){
+    while (true) {
+      if(i) {
+        const step1 = 10-i;
+        const step2 = 10-j;
+        const result = step1*step2;
+        if (--j === 0) {--i, j = 9;}
+        yield [step1, step2, result];
+      } else {
+        break;
+      }
+    }
+  };
+
+  for(const [i, j, k] of generator(9,9)){
+    console.log(`${i} x ${j} = ${k}`);
+  }
+</script>
+  
+</body>
+</html>
