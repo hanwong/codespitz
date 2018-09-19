@@ -8,66 +8,77 @@
 </head>
 <body>
   <script>
-  const textNode = (input, cursor, curr) => {
-    const idx = input.indexOf('<', cursor);
-    curr.tag.children.push({
-      type:'text', text: input.substring(cursor, idx)
-    });
-    return idx;
-  }
-  
-  const elementNode = (input, cursor, idx, curr) => {
-    const isClose = input[idx-1]==='/';
-    const name = input.substring(cursor+1, idx-(isClose?1:0))
-    const nameIdx = name.indexOf(' ')
-    const tag = {
-      type: 'node',
-      name: nameIdx===-1 ? name : name.substring(0, nameIdx),
-      attribute: [],
-      children:[]
-    };
-    if (nameIdx !== -1) {
-      const attrList = name.split(' ');
-      attrList.shift();
-      attrList.forEach(d => {
-        const attr = d.split('=');
-        tag.attribute.push({[attr[0]]: attr[1].replace('"', '')})
-      })
-    }
+  const primitiveProp = (idx, input, cursor, curr) => {
+    let isObject = false;
+    let propIdx = input.indexOf(',', idx);
+    // while (propIdx!==-1 && !['}', '"'].includes(input[propIdx-1])) {
+    //   propIdx = input.indexOf(',', propIdx+1);
+    //   console.log(propIdx)
+    // }
 
-    curr.tag.children.push(tag);
-    if (!isClose) {
-      return tag;
+    if (propIdx===-1) propIdx = input.length;
+    if (input[propIdx-1] === '}') isObject = true;
+
+    let key = input.slice(cursor, idx).trim();
+    key = key.slice(1, key.length-1);
+    let value = input.slice(idx+1, isObject ? propIdx-1 : propIdx).trim();
+    value = value[0] !== '"' ? value : value.slice(1, value.length-1)
+
+    Object.assign(curr.tag, {[key]: value});
+
+    if (isObject) {
+      curr.back.tag[curr.backKey] = curr.tag;
+      return [propIdx + 1, curr.back];
     }
-    return false;
+    return propIdx + 1;
   }
 
-  const parser = input => {
-    input = input.trim();
-    const result = {name: 'ROOT', type: 'node', children: []};
-    let curr = {tag: result}, i=0, j=input.length;
+  const jsonParser = input => {
+    input = input.trim().slice(1,input.length-1).trim();
+    const result = {};
+    let curr = {tag: result}, i=1, j=input.length;
     while(i<j) {
       const cursor = i;
-      if (input[cursor] === '<') {
-        const idx = input.indexOf('>', cursor);
-        i = idx +1;
-        if(input[cursor+1]==='/') { // 닫는 테그인 경우
-          curr = curr.back;
-          // 윗단계로 돌아갈일만 하면된다.
-        }else{ 
-          const tag = elementNode(input, cursor, idx, curr)
-          if (typeof tag === 'object') curr = {tag, back: curr};
-        }
+      let idx = input.indexOf(':', cursor);
+
+      if (input[idx+2]==='{') {
+        
+        let key = input.slice(cursor, idx).trim();
+        key = key.slice(1, key.length-1);
+        Object.assign(curr.tag, {[key]: {}});
+
+        curr = {tag: {}, back: curr, backKey: key};
+        i = idx+3;
+
       } else {
-        // 텍스트 처리 C케이스
-        i=textNode(input, cursor, curr);
+        const returnProp = primitiveProp(idx, input, cursor, curr);
+
+        if (typeof returnProp === 'number') i = returnProp;
+        else i = returnProp[0], curr = {tag: returnProp[1].tag, back: returnProp[1].back||{}, backKey: returnProp[1].backKey||''};
       }
+      
     }
     return result;
   }  
 
 
-  console.log('------', parser(`<div style="background:red" class="test">a<a>b</a>c<img src="test"/>d</div>`))
+  console.log('------', jsonParser(`{
+    "squadName1": "Super hero squad",
+    "homeTown1": "Metro City",
+    "formed": 2016,
+    "secretBase": "Super tower",
+    "active1": {
+      "squadName2": "Super hero squad",
+      "active2": {
+        "squadName3": "Super hero squad",
+        "homeTown3": "Metro City"
+      },
+      "homeTown2": "Metro City"
+    }
+  }`))
   </script>
+<!-- 
+
+-->
 </body>
 </html>
