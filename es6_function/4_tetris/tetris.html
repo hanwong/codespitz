@@ -1,0 +1,181 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta http-equiv="X-UA-Compatible" content="ie=edge">
+  <title>Document</title>
+</head>
+<body>
+
+<script>
+  const prop = (target, v) => Object.assign(target, v);
+
+  const Stage = class {
+    constructor(last, min, max, listener) {
+      /*
+      last - 최종판
+      min - 속도
+      max
+      listener
+      */
+      prop(this, {last, min, max, listener});
+    }
+    clear() {
+      this.curr = 0;
+      this.next()
+    }
+    next() {
+      // 누가 판에 따라 속도를 결정하는지? 
+      //  스테이지 값을 스테이지가 가지고 있기 때문에 스테이지 값에 따라서 그에 따른 스피드를 결정하는 것을 안쪽에 캡슐화
+      if(this.curr++ < Stage.last) {
+        const rate = (this.curr -1)/(this.last -1)
+      }
+      // 본인은 본인의 데이타만 변경하고  게임이 값을 알수 있도록 리스너를 활용한다.
+    }
+    score(line) {
+      return parseInt((this.curr*5)*(2**line))
+    }
+  }
+
+  /*
+    수행하는 잡이 누구의 역할이고 책임인지 결정하는것이 고급개발자.
+    인스턴스별로 컨택스트를 유지한다. 
+    인자로 이값을 가질지 컨텍스트롤 가질지, 객체지향은 컨택스트를 가질수도 있다.
+    함수형, 객체지향의 차이, 함수형은 자유변수를 통해 상태 유지 새로운 함수를 생성 해야 할 수 있다.
+    새로운 함수가 컨텍스트를 가지고 있어야 한다.
+    객체지향에서는 컨텍스트를 유지한다. 
+    스코어와 스테이지와의 커플링 관계?를 생각해보면?
+    스테이지는 스코어가 컨텍스트로 주입 받고 끝나야한다, 연결되어 있는 상태는 잘못된~수행
+    코드는 언어이기 때문에 동작해도 뉘앙스를 표현
+  */
+
+  const Score = class {
+    // 스코어를 바뀌면 게임에게 알려주기 위해 리스너 필요
+    constructor(stage, listener) {
+      prop(this, {stage, listener});
+    }
+    clear() {
+
+    }
+    add(line) {
+      const score = this.stage.score(line);
+      //  점수 내는 것을 스테이지에게 위임화한다, 몇번째 스테이지인지 스테이지만 아니까 스테이지만 스코어 계산법을 알고 있다.
+      //  위임을 요청을 하고 협업을 하는것,
+      this.curr += score;
+      this.total += score;
+      this.listener();
+    }
+  }
+
+  //  블럭은 찍어낼수 있는 클래스여야 한다.
+  // 연산은 데이터로 바꿀수 있다.
+  const Block = class {
+    constructor(color){
+      // prop(this, {color, rotate:0});
+    }
+    // left(){if(--this.rotate < 0) this.rotate = 3;}
+    // right(){if(++this.rotate > 3) this.rotate = 0;}
+
+    // 자식들이 오버라이드 하기를 원하는 함수
+    getBlock() { throw 'override!!' }
+  };
+  const blocks = [
+    // 충분히 추상화 된건가?
+    // 자식 부모 사이에도 은닉과 캡슐화를 지켜야 한다.
+    // 부모는 자식을 몰라준다. 알게 되면 부모 사정에 자식이 맞추게 된다.
+    // 역할이 왜 깨지는지 의인화해서 보는것이 인식하는데 도움된다.
+    // 배열을 매번 생성해내고 있다. 정적데이터인데? 
+
+    // 자식의 사정에 따라서 컨텍스트를 만들어주도록 만들어줘야 한다.
+    // 어설픈 카테고라이징 하면 망한다~
+    // 블럭간의 본질적인 차이는 색깔과 모양 뿐이네~ 행위는 부모에게 모두 추상화
+    // 도메인을 대입하면 코드로 검증되야한다. 
+    class extends Block{
+      constructor() {super('#f8cbad')}
+      getBlock() {
+        // return this.rotate % 2 ? [[1], [1], [1], [1]] : [1,1,1,1]
+      }
+    }
+  ]
+
+  const Renderer = class {
+    constructor(col, row) {
+
+    }
+    // 대체 가능성~ 공통점을 모아놓고
+    // 내적 동질성에 따라 자식것이 호출되도록
+    // 어떤 렌더러가 와도 클리어를 해야하니까
+    clear(){throw 'override!!'}
+    render(data) {
+      // 부모에게 만 있는~
+      // 프로토콜 확인만 해준다.
+      if(!(data instanceof Data)) ;
+      // 자식의 오버라이딩 된 내적동질성 코드를 실행한다.
+      // 템플릿 메소드 패턴
+      this._render(data);
+    }
+    _render(data){throw 'override!!'}
+
+  }
+
+    // 코어객체들은  홈오브젝트ㅇ
+    // 타고가서 홈오브젝트가 인스턴스가 된다.
+    // ES5는 무조건 오브젝트, 
+    // ES6는 생성자에서 상속을 받으면 자식의 this를 바꿀 수 있다. 
+    // 생성자 체인에서 this를 바꿔 줄 수 있다.
+  const Data = class extends Array {
+    constructor(col, row) {
+      prop(this, {col, row})
+    }
+  }
+
+
+  const TableRenderer = class extends Renderer {
+    constructor(base, back, col, row) {
+      super(col, row);
+      this.back = back;
+      while(row--) {
+        const tr = base.appendChild(el('tr')), curr = [];
+        this.blocks.push(curr);
+        let i = col;
+        while(i--) curr.push(tr.appendChild(el('td')).style);
+        // 한번만 나오는것은 변수로 나오면 안된다. 변수를 만드는것도 중복.
+      }
+      this.clear();
+    }
+    clear() {
+      this.blocks.forEach(
+        curr => curr.forEach(s => back(s, this.back))
+        // this. argu 가 없는 경향화된 화살표함수를 사용한다.
+      );
+      // 언어에서 지원하는 목적에 맞는 가장 추상화된 기능을 사용한다~
+    }
+    _render(v) {
+      // 모델이 들어오면 모델대로 그려~ 모델 렌더러.
+      this.blocks.forEach(
+        (curr, row) => curr.forEach((s,col) => back(s, v[row][col]))
+      )
+    }
+  }
+
+  const CanvasRenderer = class extends Renderer {
+
+  }
+
+  // 객체지향 설계의 가장 큰 전략
+  /*
+    전체에서 이질적인것은 ? 렌더러, 얘내만 시스템 객체, 네이티브 객체를 알고 있다.
+    플랫폼 환경, 렌더를 랩핑한 자식들만 알고 있다.
+    네이티브 객체를 완전히 나머지 객체들과 분리하는 것.
+    그러면 어떤 시스템이 와도 재활용 할수 있다. 도메엔 객체
+    네이티브 격리
+    도메인 객체는 전부 다 재활용 할 수 있다.
+    어떤 렌더링 시스템이 와도 재활용 할 수 있다.
+    
+    네이티브 객체를 도메인 객체들과 분리해야한다.
+  */
+
+</script>
+</body>
+</html>
