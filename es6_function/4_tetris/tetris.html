@@ -13,23 +13,19 @@
 
   const Stage = class {
     constructor(last, min, max, listener) {
-      /*
-      last - 최종판
-      min - 속도
-      max
-      listener
-      */
       prop(this, {last, min, max, listener});
     }
     clear() {
       this.curr = 0;
-      this.next()
+      this.next();
     }
     next() {
       // 누가 판에 따라 속도를 결정하는지? 
       //  스테이지 값을 스테이지가 가지고 있기 때문에 스테이지 값에 따라서 그에 따른 스피드를 결정하는 것을 안쪽에 캡슐화
       if(this.curr++ < Stage.last) {
-        const rate = (this.curr -1)/(this.last -1)
+        const rate = (this.curr -1)/(this.last -1);
+        this.speed = this.min + (this.max - this.min) * (1-rate);
+        this.listener();
       }
       // 본인은 본인의 데이타만 변경하고  게임이 값을 알수 있도록 리스너를 활용한다.
     }
@@ -56,7 +52,7 @@
       prop(this, {stage, listener});
     }
     clear() {
-
+      this.curr = this.total = 0;
     }
     add(line) {
       const score = this.stage.score(line);
@@ -71,14 +67,23 @@
   //  블럭은 찍어낼수 있는 클래스여야 한다.
   // 연산은 데이터로 바꿀수 있다.
   const Block = class {
-    constructor(color){
+    constructor(color, ...blocks){
       // prop(this, {color, rotate:0});
+      prop(this, {color, rotate:0, blocks, count: blocks.length - 1});
     }
     // left(){if(--this.rotate < 0) this.rotate = 3;}
     // right(){if(++this.rotate > 3) this.rotate = 0;}
+    left(){
+      if(--this.rotate < 0) this.rotate = count;
+    }
+    right(){
+      if(++this.rotate > count) this.rotate = 0;
+    }
 
     // 자식들이 오버라이드 하기를 원하는 함수
-    getBlock() { throw 'override!!' }
+    // getBlock() { throw 'override!!' }
+    
+    getBlock() { return this.blocks[this.rotate]; }
   };
   const blocks = [
     // 충분히 추상화 된건가?
@@ -92,16 +97,37 @@
     // 블럭간의 본질적인 차이는 색깔과 모양 뿐이네~ 행위는 부모에게 모두 추상화
     // 도메인을 대입하면 코드로 검증되야한다. 
     class extends Block{
-      constructor() {super('#f8cbad')}
-      getBlock() {
-        // return this.rotate % 2 ? [[1], [1], [1], [1]] : [1,1,1,1]
-      }
+      constructor() {super('#f8cbad',
+        [[1], [1], [1], [1]], [[1,1,1,1]]
+      )}
+      // getBlock() {
+      //   return this.rotate % 2 ? [[1], [1], [1], [1]] : [1,1,1,1]
+      // }
+    },
+    class extends Block{
+      constructor() {super('#ffe699',
+        [[0,1,0], [1,1,1]],
+        [[1,0], [1,1], [1,0]],
+        [[1,1,1], [0,1,0]],
+        [[0,1], [1,1] [0,1]]
+      )}
+    },
+    class extends Block{
+      constructor() {super('#',
+      
+      )}
+    },
+    class extends Block{
+      constructor() {super('#',
+        
+      )}
     }
   ]
 
   const Renderer = class {
     constructor(col, row) {
-
+      prop(this, {col, row, blocks: []});
+      while (row--) this.blocks.push([]);
     }
     // 대체 가능성~ 공통점을 모아놓고
     // 내적 동질성에 따라 자식것이 호출되도록
@@ -110,7 +136,7 @@
     render(data) {
       // 부모에게 만 있는~
       // 프로토콜 확인만 해준다.
-      if(!(data instanceof Data)) ;
+      if(!(data instanceof Data)) throw 'invalid data';
       // 자식의 오버라이딩 된 내적동질성 코드를 실행한다.
       // 템플릿 메소드 패턴
       this._render(data);
@@ -130,6 +156,8 @@
     }
   }
 
+  const el = el => document.createElement(el);
+  const back = (s, v) => s.backgroundColor = v;
 
   const TableRenderer = class extends Renderer {
     constructor(base, back, col, row) {
@@ -160,7 +188,27 @@
   }
 
   const CanvasRenderer = class extends Renderer {
-
+    constructor(base, back, col, row) {
+      super(col, row);
+      prop(this, {
+        width:base.width = parseInt(base.style.width),
+        height:base.height = parseInt(base.style.height),
+        cellSize:[base.width/col, base.height/row],
+        ctx:base.getContext('2d')
+      })
+    }
+    _render(v) {
+      const {ctx, cellSize: [w, h]} = this;
+      ctx.clearRect(0, 0, this.width, this.height);
+      let i = this.row;
+      while(i--) {
+        let j = this.col;
+        while(j--) {
+          ctx.fillStyle = v[i][j];
+          ctx.fillRect(j*w, i*h, w, h);
+        }
+      }
+    }
   }
 
   // 객체지향 설계의 가장 큰 전략
