@@ -8,14 +8,17 @@ const Task = class{
   }
   toggle(){this.isComplete = !this.isComplete;}
   getInfo(){return {title:this.title, isComplete:this.isComplete};}
+  getInstance(v){
+    return new Task(v);
+  }
 };
+const taskIns = new Task;
 
 const Folder = class extends Set{
   constructor(title){
     super();
     this.title = title;
   }
-  newTask(v){this.addTask(new Task(v));}
   addTask(task){super.add(task);}
   removeTask(task){super.delete(task);}
   getTitle(){return this.title;}
@@ -23,14 +26,17 @@ const Folder = class extends Set{
   add(){}
   delete(){}
   values(){}
+  getInstance(v){
+    return new Folder(v);
+  }
 };
+const folderIns = new Folder;
 
 const App = class extends Set{
   constructor(renderer){
     super();
     this.renderer = renderer;
   }
-  newFolder(v){this.addFolder(new Folder(v));}
   addFolder(folder){super.add(folder);}
   removeFolder(folder){super.delete(folder);}
   getFolders(){return [...super.values()];}
@@ -60,7 +66,7 @@ const DomRenderer = class extends Renderer{
       const v = e.target.value.trim();
       e.target.value = '';
       if(!v) return;
-      app.newFolder(v);
+      app.addFolder(folderIns.getInstance(v));
       this.render();
     });
     t.addEventListener('keyup', e =>{
@@ -68,7 +74,7 @@ const DomRenderer = class extends Renderer{
       const v = e.target.value.trim();
       e.target.value = '';
       if(!v) return;
-      this.current.newTask(v);
+      this.current.addTask(taskIns.getInstance(v));
       this.render();
     });
     const [folder, task] = section.querySelectorAll('ul');
