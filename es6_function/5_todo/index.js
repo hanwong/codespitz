@@ -210,6 +210,7 @@ const DomRenderer = class extends Renderer {
       li.ondrop = e =>{
         e.preventDefault();
         f.moveTask(moveTask, this.currentFolder);
+        this.render();
       };
       li.ondragover = e =>{
         e.preventDefault();
