@@ -5,8 +5,33 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <meta http-equiv="X-UA-Compatible" content="ie=edge">
   <title>Document</title>
+  <style>
+    main .folder {
+      float:left; width: 200px; border-right: 1px solid #000;
+    }
+    main .task {
+      margin-left: 210px;
+    }
+  </style>
 </head>
 <body>
-  <script src="homework.js"></script>
+  <main>
+    <nav class="gnb">
+      <button>load</button>
+      <button>save</button>
+    </nav>
+    <nav class="folder">
+      <input type="text">
+      <ul></ul>
+    </nav>
+    <section class="task">
+      <header>
+        <h2></h2>
+        <input type="text">
+      </header>
+      <ul></ul>
+    </section>
+  </main>
+  <script src="index.js"></script>
 </body>
 </html>
