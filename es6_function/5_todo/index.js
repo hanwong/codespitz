@@ -140,6 +140,7 @@ const Renderer = class {
 const DomRenderer = class extends Renderer {
   constructor(parent, app) {
     super(app);
+    this.taskEl = [];
 
     const [folder, task] = Array.from(parent.querySelectorAll('ul'));
     const [load, save] = Array.from(parent.querySelectorAll('button'));
@@ -158,7 +159,6 @@ const DomRenderer = class extends Renderer {
     this.currentFolder = null;
     this.folder = folder;
     this.task = task;
-    this.taskEl = [];
 
     parent.querySelector('nav>input').addEventListener('keyup', e => {
       if (e.keyCode !== 13) return;
@@ -219,6 +219,7 @@ const DomRenderer = class extends Renderer {
     });
     if(lastEl) while(oldEl=lastEl.nextElementSibling){
       this.folder.removeChild(oldEl);
+      this.taskEl.push(oldEl);
     }
 
     if (!this.currentFolder) return;
@@ -240,7 +241,7 @@ const DomRenderer = class extends Renderer {
           li = oldEl;
           oldEl = oldEl.nextElementSibling;
         } else {
-          li = el('li');
+          li = this.taskEl.length ? this.taskEl.pop() : el('li');
           this.task.appendChild(li); 
           oldEl = null;
         }
