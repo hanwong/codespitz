@@ -1,17 +1,4 @@
 
-const Table = (_=>{
-  const Private = Symbol();
-  return class {
-    constructor(parent){}
-    async load(url){}
-    render(){}
-  }
-})();
-
-const loader = new JsonData('75_1.json');
-const renderer = new TableRenderer();
-renderer.render(data);
-
 const Data = class {
   async getData(){
     const data = await this._getData();
@@ -70,7 +57,7 @@ const TableRenderer = class extends Renderer {
     const parent = document.querySelector(this._parent);
     if(!parent) throw 'invalid parent';
     parent.innerHTML = '';
-    const [title, header, items] = this._info;
+    const {title, header, items} = this._info._private;
     const [table, caption, thead] = 'table,caption,thead'.split(',').map(v=>document.createElement(v));
     caption.innerHTML = title;
     [
@@ -84,3 +71,8 @@ const TableRenderer = class extends Renderer {
     parent.appendChild(table);
   }
 };
+
+
+const test = new JsonData('data.json');
+const renderer = new TableRenderer('.container');
+renderer.render(test);
