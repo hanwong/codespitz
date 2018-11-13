@@ -36,10 +36,13 @@ const JsonData = class extends Data {
 };
 
 const Renderer = class {
-  constructor(){}
-  async render (data) {
+  constructor(data){
     if(!(data instanceof Data)) throw 'invalid data type';
-    this._info = await data.getData();
+    this.data = data;
+  }
+  async render () {
+    const res = await this.data.getData();
+    this._info = res._private;
     this._render();
   }
   _render(){
@@ -48,16 +51,17 @@ const Renderer = class {
 };
 
 const TableRenderer = class extends Renderer {
-  constructor(parent){
+  constructor(parent, data){
+    super(data);
     if(typeof parent != 'string' || !parent) throw 'invalid param';
-    super();
     this._parent = parent;
+    this.render();
   }
   _render(){
     const parent = document.querySelector(this._parent);
     if(!parent) throw 'invalid parent';
     parent.innerHTML = '';
-    const {title, header, items} = this._info._private;
+    const {title, header, items} = this._info;
     const [table, caption, thead] = 'table,caption,thead'.split(',').map(v=>document.createElement(v));
     caption.innerHTML = title;
     [
@@ -74,5 +78,5 @@ const TableRenderer = class extends Renderer {
 
 
 const test = new JsonData('data.json');
-const renderer = new TableRenderer('.container');
-renderer.render(test);
+
+new TableRenderer('.container', test);
