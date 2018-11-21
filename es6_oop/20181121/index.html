@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta http-equiv="X-UA-Compatible" content="ie=edge">
+  <title>Document</title>
+</head>
+<body>
+<script>
+  // 태스크의 일부 기능을 알고 있는 도우미 객체
+  // 태스크 알고 있다는 기반하에 만들어지기 때문에 , 제약된 클래스 체계로 바꾼다.
+  // const taskSort = {
+  //   title: (a, b) => a.sortTitle(b),
+  //   date: (a, b) => a.sortDate(b)
+  // }
+  // 클래스가 권한 관계에 따라 잘 정리되어야 한다.
+  const Sort = class {
+    static title = (a, b) => a.sortTitle(b)
+    static date = (a, b) => a.sortDate(b)
+    sortTitle(task){ throw 'override'}
+    sortDate(task){ throw 'override'}
+  }
+
+  const Task = class extends Sort{
+    // 팩토링 함수, 외부에서 new Taskf를 방지하기 위해서, constructor도 외부에 공개된, 생성자를 공개하기 싫으면 내부에서 생성해주는,
+    // 생성에 대한 지식이 외부에 노출되지 않는다. 아니면 생성자가 외부에 노출되서 변경하기 힘들다. 변수가 늘어날수도 있고~...
+    // 
+    static get(title, date=null) {return new Task(title, date);}
+    // constructor(title, date = null) {
+    constructor(title, date) {
+      if(!title) throw 'invalid title';
+      this._title = title;
+      this._date = date;
+      this._isComplete = false;
+    }
+    // 메소드가 외부에 공개될때 고민할것은 캡슐화가 잘되어 있는지 고민해야 한다.
+    // 내부사정을 외부에 들키지 않고 
+    isComplete() {return this._isComplete;}
+    // 클래스의 퍼블릭 메소드르르 만드는 요령은 캡슐화한다 목적만 알도록 제한된 권한만 알 수 있도록
+    // 제일 좋은 메소드는 인자가 없는 메소드, 두번째는 인자가 하나인 경우, 나머지는 안좋은 메소드.
+    // 인자 하나 받을때까지 캡슐화가 유지되지 나머지는 대부부 깨진다.
+    // 인자가 많아 질 수록 내부에서 캡슐화 하는 부분이 줄어든다.
+    toggle(){tihs._isComplete = !this._isComplete;}
+    sortTitle(task){
+      return this._title > task._title;
+    }
+    sortDate(task){
+      return this._date > task._date;
+    }
+  }
+
+  const TaskList = class {
+    constructor(title) {
+      if (!title) throw 'invalid title';
+      this._title = title;
+      this._list = [];
+    }
+    // 함수형은 인자로 값을 전달하는것이 핵심, 참조를 전달하면 함수형이 아니다. 기존것이 복사되어 전달하는 방식
+    // 객채지향은 객체 컨텍스트를 사용, 메모리 주소로 식별.
+    // 객체로 통신해야 한다. 엔트리 입구만 값을 받아야 한다.
+    // 메모리의 주소인 객체로 인자가 들어와야 한다.
+    // 값 컨텍스트를 사용한다면 이름 부터 명시적으로 되어 있어야 한다. 
+    // 값으로 객체를 식별하지 않는다.
+    add (title, date) {
+      // 값을 받아서 객체컨택스트로 변경, 객체의 필드에 만 값을 넣을 수 있다. 그래야 캡슐화~
+      this._list.push(Task.get(title, date));
+    }
+    // 리무브도 값을 받으면 안된다. 객체가 아니라 값으로 식별하게 되니까
+    remove (task) {
+      const list = this._list;
+      if(list.includes(task)) list.splice(list.indexOf(task), 1)
+    }
+    byTitle(stateGroup = true) {return this._getList(Sort.title, stateGroup)}
+    byDate(stateGroup = true) {return this._getList(Sort.Date, stateGroup)}
+    // 외부 노출되는 메소드는 감춰서 인자를 하나만 받는다.
+    // 인자가 하나가 되거나 없어질때까지 메소드를 늘리는것이 낫다.
+    // 내부용 메소드는 인자를 여러개 받아도 내부에서 함께 수정.
+    _getList(sort, stateGroup) {
+      const list = this._list;
+      return !stateGroup ? [...list].sort(sort) : [
+        ...list.filter(v=>!v.isComplete()).sort(sort),
+        ...list.filter(v=>v.isComplete()).sort(sort)
+      ]
+    }
+
+    // TODO SUB ITEM
+    // 중복을 제거하려면 역할을 재검토
+    // 뷰 때문에 모델을 만드는데 휘둘리면 안된다.
+    ///...
+    // 태스크리스트도 태스크 아닌가????????????
+
+
+
+  }
+
+</script>
+</body>
+</html>

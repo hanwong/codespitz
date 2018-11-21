@@ -1,0 +1,106 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta http-equiv="X-UA-Compatible" content="ie=edge">
+  <title>Document</title>
+</head>
+<body>
+<script>
+
+  const Task = class {
+    // static get(title, date=null) {return new Task(title, date);}
+    constructor(title, date) {
+      this._title = title;
+      this._date = date;
+      this._isComplete = false;
+      // 태스크도 리스트를 가질 수 있다. 태스크리스트가 필요 없다.
+      this._list = [];
+    }
+    isComplete() {return this._isComplete;}
+    toggle(){tihs._isComplete = !this._isComplete;}
+    // sortTitle(task){
+    //   return this._title > task._title;
+    // }
+    // sortDate(task){
+    //   return this._date > task._date;
+    // }
+    add (title, date = null) {
+      this._list.push(new Task(title, date));
+    }
+    remove (task) {
+      const list = this._list;
+      if(list.includes(task)) list.splice(list.indexOf(task), 1)
+    }
+    // 언도가 빠지고 외부에 공개되도록. 
+    // 나쁜 함수를 쓸때는 일반 함수와 함꼐 제공, 일반 사용자용과 고급 사용자용 함께 제공
+    byTitle(stateGroup = true) {return this.list('title', stateGroup)}
+    byDate(stateGroup = true) {return this.list('date', stateGroup)}
+    list(sort, stateGroup) {
+      const list = this._list,
+      // 내가 내사정을 아니까 외부 사용되던 프로토콜을 다 없애도 된다. 내부정보까서~
+      f = (a,b) => a['_'+sort] > b['_'+sort];
+
+      // 자식의 자식을 위한...
+      // 컴포지트 언터페이스
+      const map = task => task.list(sort, stateGroup);
+
+      return {
+        task: this,
+        // list: !stateGroup ? [...list].sort(f) : [
+        //   ...list.filter(v=>!v.isComplete()).sort(f),
+        //   ...list.filter(v=>v.isComplete()).sort(f)
+        // ]
+
+        /*
+          리스트를 이용해서 리스트를 반환하기 때문에 여기가 컴포지트 인터페이스
+          테스크와 리스트가 있는 타입을 보장한다.
+        */
+        list: !stateGroup ? [...list].sort(f).map(map) : [
+          ...list.filter(v=>!v.isComplete()).sort(f).map(map),
+          ...list.filter(v=>v.isComplete()).sort(f).map(map)
+        ]
+      }
+    }
+  }
+  // 더욱더 로직이 일반화 되었다. 모든 코드가 테스크 처리만. 
+  // 제네릭화 된 알고리즘. 응용을 만들때도 지식이 덜 드니까~
+  // 중복된 역할을 제거~
+
+  // 자식의 자식의 자식의 리스트를 가져오기 위해서 어떻게 전체 구조에 포함을 시키는가?
+  // 컴포지트 패턴~
+
+
+  // 이제 모델을 이용해서 그림을 그리자...
+
+  const el = (tag, attr={}) => Object.entries(attr).reduce((el, v) => { //벡터를 하나의 스칼라로 만들때
+    typeof el[v[0]] == 'function'? el[v[0]](v[1]) : (el[v[0]] = v[1]);
+    return el;
+  }, document.createElement(tag));
+
+  const DomRenderer = class {
+    constructor (parent) {
+      this._parent = parent;
+    }
+    render(data) {
+      const {task: {_title: title}, list} = data;
+      const parent = document.querySelector(this._parent);
+      parent.innnerHTML = '';
+      parent.appendChild(el('h1', {innnerHTML:title}));
+      parent.appendChild(this._render(el('ul'), list));
+      // 부모엘리먼트와 리스트를 그리고 반복, 사용자 측도 컴포지트 패턴이어야 한다.
+    }
+    _render(parent, list) {
+      list.forEach(({task, list})=>{
+        const li = parent.appendChild(el('li'));
+        li.appendChild(el('div', {innnerHTML:task._title}));
+        li.appendChild(this._render(el('ul'), list));
+      })
+      return parent;
+    }
+  }
+
+</script>
+</body>
+</html>
