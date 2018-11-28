@@ -1,0 +1,181 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta http-equiv="X-UA-Compatible" content="ie=edge">
+  <title>Document</title>
+</head>
+<body>
+<script>
+
+  const Task = class {
+    constructor(title, date) {
+      this._title = title;
+      this._date = date;
+      this._isComplete = false;
+      this._list = [];
+    }
+    isComplete() {return this._isComplete;}
+    toggle(){tihs._isComplete = !this._isComplete;}
+    add (title, date = null) {
+      this._list.push(new Task(title, date));
+    }
+    remove (task) {
+      const list = this._list;
+      if(list.includes(task)) list.splice(list.indexOf(task), 1)
+    }
+    byTitle(stateGroup = true) {return this.list('title', stateGroup)}
+    byDate(stateGroup = true) {return this.list('date', stateGroup)}
+    list(sort, stateGroup) {
+      const list = this._list,
+      f = (a,b) => a['_'+sort] > b['_'+sort];
+      const map = task => task.list(sort, stateGroup);
+      return {
+        task: this,
+        list: !stateGroup ? [...list].sort(f).map(map) : [
+          ...list.filter(v=>!v.isComplete()).sort(f).map(map),
+          ...list.filter(v=>v.isComplete()).sort(f).map(map)
+        ]
+      }
+    }
+  }
+  const el = (tag, attr={}) => Object.entries(attr).reduce((el, v) => {
+    typeof el[v[0]] == 'function'? el[v[0]](v[1]) : (el[v[0]] = v[1]);
+    return el;
+  }, document.createElement(tag));
+
+  // 템플릿 메소드 패턴
+  // 리턴받고 인자로 넘겨 넘겨
+  const Renderer = class {
+    render ({task, list}) {
+      this._folder(task);
+      this.subTask(this._parent(task), list);
+      // 역할을 계속 수행해다 나온 부산물을 다음 객체에 위임 시켜나간다.
+    }
+    subTask (parent, list) {
+      list.forEach(({task, list}) => {
+        const v = this._task(parent, task);
+        this.subTask(this._parent(v, this), list);
+      })
+    }
+    _folder (task) {throw 'override!'}
+    _parent (v, task) {throw 'override!'}
+    _task (v, task) {throw 'override!'}
+  }
+
+  // const DomRenderer = class {
+  //   constructor (parent) {
+  //     this._parent = parent;
+  //   }
+  //   render(data) {
+  //     const {task: {_title: title}, list} = data; // DonRenderer가 가지고 있는 지식
+  //     const parent = document.querySelector(this._parent);
+  //     parent.innnerHTML = '';
+  //     parent.appendChild(el('h1', {innnerHTML:title})); // DonRenderer가 가지고 있는 지식
+  //     parent.appendChild(this._render(el('ul'), list)); // DonRenderer가 가지고 있는 지식
+  //   }
+  //   _render(parent, list) {
+  //     list.forEach(({task, list})=>{
+  //       const li = parent.appendChild(el('li'));
+  //       li.appendChild(el('div', {innnerHTML:task._title}));
+  //       li.appendChild(this._render(el('ul'), list));
+  //     })
+  //     return parent;
+  //   }
+  // }
+  const DomRenderer = class extends Renderer {
+    constructor (parent) {
+      super();
+      this._p = parent;
+    }
+    _folder ({_title: title}) {
+      const parent = document.querySelector(this._p);
+      parent.innerHTML = '';
+      parent.appendChild(el('h1', {innerHTML: title}));
+      return parent;
+    }
+    _parent (v, _) {
+      return v.appendChild(el('ul'));
+    }
+    _task (v, {_title: title}) {
+      const li = v. appendChild(el('li'));
+      li.appendChild(el('div', {innerHTML: title}));
+      return li;
+    }
+  };
+
+  // const ConsoleRenderer = class {
+  //   render (data) {
+  //     const {task: {_title: title}, list} = data;
+  //     console.log('---------');
+  //     console.log('folder:', title);
+  //     this._render('', list);
+  //   }
+  //   _render (indent, list) {
+  //     list.forEach(/*
+  //       ...
+  //     */)
+  //   }
+  // }
+  const ConsoleRenderer = class extends Renderer {
+    constructor (parent) {
+      super();
+      this._p = parent;
+    }
+    _folder ({_title: title}) {
+      console.log('-------');
+      console.log('folder:', title);
+      return '';
+    }
+    _parent (v, list) {
+      return v;
+    }
+    _task (v, {_title: title}) {
+      console.log(v, title);
+      return v + '-';
+    }
+  };
+  /*
+    렉시컬 - 변수를 인식 할 수 있는 공간
+    언어에서 제공하는건 스코프,
+    우리가 직접 제공해줄수 있다.
+    ...
+    훅 간에 템플릿을 공유하는게 상황에 따라 다르기 때문에 
+
+    클래스를 만들고 메소드르르 만들었는데 메소드가 지역변수 인자로만 되어 있다면 밖에서도 쓸수 있는 유틸리티이다. 빼내도 된다. 객체 지향을 위반 , 은닉 캡슐화를 하지 않고 있다.  상속관계가 아닌 거다.
+    은닉된 데이타를 접근해야 캡슐화를 할 수 있다.
+    메소드는 this를 사용하게 되어 있다.
+    this로 연결되어 있을 때 템플릿 메소드 패턴을
+    
+    관계를 가진 객체의 정보를 거의 모를 때 전략 패턴을 사용, 
+    그것이 비지터.. .외부 역할 , 렌더러와 상호 작용하는건 불가능
+
+  */
+  const Visitor = class {
+    folder (task) {throw 'override!'}
+    parent (v, task) {throw 'override!'}
+    task (v, task) {throw 'override!'}
+  };
+
+  const Renderer = class {
+    constructor (visitor) {this.visitor = visitor;}
+    render ({task, list}) {
+      const v = this.visitor.folder(task);
+      this.subTask(this.visitor.parent(v, task), list);
+    }
+    subTask (parent, list) {
+      list.forEach(({task, list}) => {
+        const v = this.visitor.task(parent, task);
+        this.subTask(this.visitorparent(v, this), list);
+      })
+    }
+  };
+
+  // 
+
+  
+
+</script>
+</body>
+</html>
