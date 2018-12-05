@@ -1,0 +1,153 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <title>visitor</title>
+  </head>
+  <body>
+    <section id="a"></section>
+    <script>
+      const Task = class {
+        constructor(title, date) {
+          (this._title = title),
+            (this._date = date),
+            (this._isComplete = false);
+          this._list = [];
+        }
+        isComplete() {
+          return this._isComplete;
+        }
+        toggle() {
+          this._isComplete = !this._isComplete;
+        }
+        add(title, date = null) {
+          const task = new Task(title, date);
+          this._list.push(task);
+          return task;
+        }
+        remove(task) {
+          const list = this._list;
+          if (list.includes(task)) list.splice(list.indexOf(task), 1);
+        }
+        byTitle(stateGroup = true) {
+          return this.list("title", stateGroup);
+        }
+        byDate(stateGroup = true) {
+          return this.list("date", stateGroup);
+        }
+        list(sort, stateGroup = true) {
+          const list = this._list,
+            f = (a, b) => a[sort] > b[sort];
+          const map = task => task.list(sort, stateGroup);
+          return {
+            task: this,
+            list: !stateGroup
+              ? [...list].sort(f).map(map)
+              : [
+                  ...list
+                    .filter(v => !v.isComplete())
+                    .sort(f)
+                    .map(map),
+                  ...list
+                    .filter(v => v.isComplete())
+                    .sort(f)
+                    .map(map)
+                ]
+          };
+        }
+      };
+
+      const el = (tag, attr = {}) =>
+        Object.entries(attr).reduce((el, v) => {
+          typeof el[v[0]] == "function" ? el[v[0]](v[1]) : (el[v[0]] = v[1]);
+          return el;
+        }, document.createElement(tag));
+
+      const Renderer = class {
+        constructor (visitor) {
+          this.visitor = visitor;
+        }
+        render({ task, list }) {
+          const v = this.visitor.folder(task, this);
+          this.subTask(this.visitor.parent(v, task), list);
+        }
+        subTask(parent, list) {
+          list.forEach(({ task, list }) => {
+            const v = this.visitor.task(parent, task);
+            this.subTask(this.visitor.parent(v, this), list);
+          });
+        }
+      };
+
+      const Visitor = class {
+        folder(task, app) {
+          throw "override";
+        }
+        parent(v, task) {
+          throw "override";
+        }
+        task(v, task) {
+          throw "override";
+        }
+      };
+      
+      const DomVisitor = class extends Visitor {
+        constructor(parent) {
+          super();
+          this._p = parent;
+        }
+        folder(task, app) {
+          const parent = document.querySelector(this._p);
+          parent.innerHTML = "";
+          parent.appendChild(el("h1", { innerHTML: task._title }));
+
+          const sortTitle = el("button", {
+            innerHTML: 'Sort by Title',
+            onclick: _ => {
+              task.byTitle();
+              app.render(task.list('title'));
+            }
+          });
+          const sortDate = el("button", {
+            innerHTML: 'Sort by Date',
+            onclick: _ => {
+              task.byDate();
+              app.render(task.list('date'));
+            }
+          });
+          parent.appendChild(sortTitle);
+          parent.appendChild(sortDate);
+          return parent;
+        }
+        parent(v, task) {
+          return v.appendChild(el("ul"));
+        }
+        task(v, task) {
+          const li = v.appendChild(el("li"));
+          const taskEl = el("div", { 
+              innerHTML: `<b>${task._isComplete ? 'Completed' : 'Process'}:</b> ${task._title}`
+            });
+          taskEl.addEventListener('click', e =>{
+            task.toggle();
+            taskEl.innerHTML = `<b>${task._isComplete ? 'Completed' : 'Process'}:</b> ${task._title}`
+          });
+          li.appendChild(taskEl);
+          return li;
+        }
+      };
+
+      const folder = new Task("s3-4");
+      folder.add("3강교안작성");
+      folder.add("2강교안작성");
+      const { list } = folder.list("title");
+      list[1].task.add("ppt정리");
+      list[1].task.add("코드정리");
+      const { list: sublist } = list[1].task.list("title");
+      sublist[1].task.add("슬라이드마스터 정리");
+      sublist[1].task.add("디자인개선");
+      
+      const todo = new Renderer(new DomVisitor("#a"));
+      todo.render(folder.list("title"));
+    </script>
+  </body>
+</html>
