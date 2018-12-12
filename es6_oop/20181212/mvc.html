@@ -1,0 +1,124 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta http-equiv="X-UA-Compatible" content="ie=edge">
+  <title>Document</title>
+</head>
+<body>
+<script>
+const Model = class extends Set {
+  add(){throw 1}
+  delete(){throw 1}
+  has(){throw 1}
+  constructor(prop) {
+    super();
+    // 데이터를 프롭에 숨김
+    this._prop = Object.assign(Object.create(null), prop);
+  }
+  listen(){throw 1}
+  addListener(c){super.add(c)}
+  removeListener(c){super.delete(c)}
+  // 컨트롤러에게 보고
+  nodify(){this.forEach(v=>v.listen(this))}
+};
+
+const Task = class extends Model{
+  constructor(title){super({title, isComplete: false, list: []})}
+  // 모델을 상속 받았으므로 바뀌는것을 다보고해야 됨
+  listen(){this.nodify()}
+  // ...
+  toggle() {
+    this._prop.isComplete = !this._prop.isComplete;
+    // 변화가 있으면 무조건 보고 해야한다.
+    this.nodify();
+  }
+
+};
+
+const View = class {
+  // 뷰는 반드시 컨트롤러를 알아야 한다.
+  constructor(controller){this.controller = controller}
+  render(m){throw 1}
+};
+
+const IndexView = class extends View {
+  constructor(controller) {
+    super(controller);
+    this.p = document.querySelector('#folders');
+    document.querySelector('#newFolder').onkeyup = e => {
+      e.stopImmediatePropogation();
+      const {keyCode, target} = e;
+      if(keyCode != 13) return;
+      // 핵심로직은 컨트롤러에게 다 시킨다.
+      controller.add(target.value);
+      target.value = '';
+    }
+  }
+  // 뷰는 모델을 소비하는 역할만 하고 컨트롤러에게 보고해야 한다.
+  // 뷰는 컨트롤러에게 보고 하고 끝낸다.
+  render({list}) {
+    // ...
+  }
+};
+
+const FolderView = class extends View {
+  // ...
+};
+
+// 뷰가 모델을 소비만하고 컨트롤러에게 밀어내야지만 MVC가 성립한다.
+
+const Controller = class {
+  // 라우터를 알아야지만 내가 할일이 아니면 다른 컨트롤러에게 시킬 수 있어야 한다.
+  constructor(router) {this.router = router;}
+  // 컨트롤러가 라우터에게 일을 시킬때 필요
+  action(...arg){}
+  // 제왕적 리스너~
+  listen(m){throw 1}
+};
+
+const Index = class extends Controller {
+  constructor(router) {
+    super(router);
+    // 모델을 섭외해옴.
+    this.model = Task.root || (Task.root = new Task('root'))
+    this.model.addListener(this);
+    // 뷰도~
+    this.view = new IndexView(this);
+  }
+  action(...arg){this.view.render(this.model.list())}
+  listen(m){this.action()}
+  add(title){this.model.add(title);}
+  // 해당 컨트롤러에게 필요한 일만하고 다른 일은 다른 컨트롤러에게 위임한다.
+  select(task){this.router.route('folder', task);}
+};
+
+const Folder = class extends Controller {
+  constructor(router){
+    super(router);
+    this.view = new FolderView(this);
+  }
+  action(...arg){
+    this.model = arg[0];
+    this.model.addListener(this);
+    this.view.render(this.model.list);
+  }
+  listen(m){this.view.render(this.model.list());}
+  addNew(title){this.model.add(title);}
+  // ...
+};
+
+const Router = class extends Map {
+  constructor(){super()}
+  router(key, ...arg) {
+    //...
+  }
+};
+
+// 모델과 뷰를 분리하고 컨트롤러에서 모델의 변화를 흡수하도록
+
+
+</script>
+</body>
+</html>
